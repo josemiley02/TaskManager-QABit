@@ -17,6 +17,7 @@ public class WorkItemsController : ControllerBase
     private readonly IValidator<GetWorkItemsRequest> _getWorkItemsValidator;
     private readonly GetWorkItemByIdService _getWorkItemByIdService;
     private readonly DeleteWorkItemService _deleteWorkItemService;
+    private readonly ChangeWorkItemStatusService _changeWorkItemStatusService;
 
     public WorkItemsController(CreateWorkItemService createWorkItemService, 
         UpdateWorkItemService updateWorkItemService,
@@ -24,7 +25,8 @@ public class WorkItemsController : ControllerBase
         GetWorkItemsService getWorkItemsService, 
         IValidator<GetWorkItemsRequest> getWorkItemsValidator, 
         GetWorkItemByIdService getWorkItemByIdService,
-        DeleteWorkItemService deleteWorkItemService)
+        DeleteWorkItemService deleteWorkItemService,
+        ChangeWorkItemStatusService changeWorkItemStatusService)
     {
         //POST and PUT
         _createWorkItemService = createWorkItemService;
@@ -40,6 +42,9 @@ public class WorkItemsController : ControllerBase
 
         //DELETE
         _deleteWorkItemService = deleteWorkItemService;
+
+        //PATCH
+        _changeWorkItemStatusService = changeWorkItemStatusService;
     }
 
     [HttpPost]
@@ -133,5 +138,19 @@ public class WorkItemsController : ControllerBase
             return NotFound();
         }
         return NoContent();
+    }
+
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType(typeof(NoContent), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangeStatus([FromRoute] Guid id, [FromBody] ChangeWorkItemStatusRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _changeWorkItemStatusService.ExecuteAsync(id, request.WorkItemStatus, cancellationToken);
+        if (!result)
+        {
+            return NotFound();
+        }
+        return Ok(NoContent());
     }
 }

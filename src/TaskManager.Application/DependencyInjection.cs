@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<GetWorkItemByIdService>();
         services.AddScoped<DeleteWorkItemService>();
         services.AddScoped<UpdateWorkItemService>();
+        services.AddScoped<ChangeWorkItemStatusService>();
         return services;
     }
 }
