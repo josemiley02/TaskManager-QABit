@@ -11,5 +11,5 @@ public class WorkItem
     public string Asignee {get; set;} = string.Empty;
     public DateTime DueDate {get; set;}
     public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
-    public DateTime? UpdateAt {get; set;}
+    public DateTime? UpdatedAt {get; set;}
 }

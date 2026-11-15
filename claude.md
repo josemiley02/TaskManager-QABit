@@ -600,7 +600,7 @@ cd src/TaskManager.Api
 
 dotnet user-secrets init
 
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=taskmanager_db;Username=postgres;Password=TU_PASSWORD"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=taskmanager_db;Username=postgres;Password=miguel02"
 ```
 
 Después regresa a la raíz:
