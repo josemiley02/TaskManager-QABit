@@ -1,11 +1,9 @@
-using System.Globalization;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Application.DTOs.Common;
 using TaskManager.Application.DTOs.WorkItems;
 using TaskManager.Application.Services;
-using TaskManager.Application.Validators.Tasks;
 
 namespace TaskManager.Api.Controllers;
 [ApiController]
