@@ -21,7 +21,7 @@ public class UpdateWorkItemService
         workItem.Description = request.Description;
         workItem.Asignee = request.Asignee;
         workItem.WorkItemStatus = request.WorkItemStatus;
-        workItem.DueDate = request.DueDate;
+        workItem.DueDate = WorkItemDateTime.NormalizeDueDateToUtc(request.DueDate);
         workItem.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(workItem, cancellationToken);

@@ -16,7 +16,8 @@ public class WorkItemServiceTests
         WorkItem? addedWorkItem = null;
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
-        var dueDate = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dueDate = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        var expectedDueDate = DateTime.SpecifyKind(dueDate, DateTimeKind.Utc);
         var request = new WorkItemRequest
         {
             Title = "  Prepare release  ",
@@ -41,7 +42,8 @@ public class WorkItemServiceTests
         Assert.Equal("Alex", addedWorkItem.Asignee);
         Assert.Equal(request.Description, addedWorkItem.Description);
         Assert.Equal(WorkItemStatus.Pending, addedWorkItem.WorkItemStatus);
-        Assert.Equal(dueDate, addedWorkItem.DueDate);
+        Assert.Equal(expectedDueDate, addedWorkItem.DueDate);
+        Assert.Equal(DateTimeKind.Utc, addedWorkItem.DueDate.Kind);
         Assert.NotEqual(default, addedWorkItem.CreatedAt);
         Assert.Equal(addedWorkItem.Id, response.Id);
         Assert.Equal(addedWorkItem.Title, response.Title);
@@ -73,14 +75,16 @@ public class WorkItemServiceTests
             DueDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
             CreatedAt = createdAt
         };
+        var dueDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Unspecified);
         var request = new WorkItemRequest
         {
             Title = "Updated title",
             Description = "Updated description",
             WorkItemStatus = WorkItemStatus.InProcess,
             Asignee = "Jordan",
-            DueDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc)
+            DueDate = dueDate
         };
+        var expectedDueDate = DateTime.SpecifyKind(dueDate, DateTimeKind.Utc);
         WorkItem? updatedWorkItem = null;
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
@@ -104,7 +108,8 @@ public class WorkItemServiceTests
         Assert.Equal(request.Description, persistedWorkItem.Description);
         Assert.Equal(request.WorkItemStatus, persistedWorkItem.WorkItemStatus);
         Assert.Equal(request.Asignee, persistedWorkItem.Asignee);
-        Assert.Equal(request.DueDate, persistedWorkItem.DueDate);
+        Assert.Equal(expectedDueDate, persistedWorkItem.DueDate);
+        Assert.Equal(DateTimeKind.Utc, persistedWorkItem.DueDate.Kind);
         Assert.Equal(createdAt, persistedWorkItem.CreatedAt);
         Assert.NotNull(persistedWorkItem.UpdatedAt);
         Assert.Equal(persistedWorkItem.Id, response.Id);

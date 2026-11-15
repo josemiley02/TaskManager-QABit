@@ -22,7 +22,7 @@ public class CreateWorkItemService
             Description = request.Description,
             WorkItemStatus = WorkItemStatus.Pending,
             Asignee = request.Asignee.Trim(),
-            DueDate = request.DueDate,
+            DueDate = WorkItemDateTime.NormalizeDueDateToUtc(request.DueDate),
             CreatedAt = DateTime.UtcNow
         };
 
