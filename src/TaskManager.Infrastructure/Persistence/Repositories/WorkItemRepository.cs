@@ -42,4 +42,9 @@ public class WorkItemRepository : IWorkItemRepository
         
         return (items, totalCount);
     }
+
+    public async Task<WorkItem?> GetWorkItemByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id==id, cancellationToken);
+    }
 }

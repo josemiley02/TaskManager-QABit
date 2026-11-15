@@ -14,8 +14,9 @@ public class WorkItemsController : ControllerBase
     private readonly IValidator<CreateWorkItemRequest> _createWorkItemValidator;
     private readonly GetWorkItemsService _getWorkItemsService;
     private readonly IValidator<GetWorkItemsRequest> _getWorkItemsValidator;
+    private readonly GetWorkItemByIdService _getWorkItemByIdService;
 
-    public WorkItemsController(CreateWorkItemService createWorkItemService, IValidator<CreateWorkItemRequest> createWorkItemValidator, GetWorkItemsService getWorkItemsService, IValidator<GetWorkItemsRequest> getWorkItemsValidator)
+    public WorkItemsController(CreateWorkItemService createWorkItemService, IValidator<CreateWorkItemRequest> createWorkItemValidator, GetWorkItemsService getWorkItemsService, IValidator<GetWorkItemsRequest> getWorkItemsValidator, GetWorkItemByIdService getWorkItemByIdService)
     {
         //POST
         _createWorkItemService = createWorkItemService;
@@ -24,6 +25,9 @@ public class WorkItemsController : ControllerBase
         //GET
         _getWorkItemsService = getWorkItemsService;
         _getWorkItemsValidator = getWorkItemsValidator;
+
+        //GET BY ID
+        _getWorkItemByIdService = getWorkItemByIdService;
     }
 
     [HttpPost]
@@ -64,6 +68,19 @@ public class WorkItemsController : ControllerBase
             return ValidationProblem(new ValidationProblemDetails(errors));
         }
         var result = await _getWorkItemsService.ExecuteAsync(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(WorkItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWorkItemById([FromRoute] Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await _getWorkItemByIdService.GetItemAsync(id, cancellationToken);
+        if (result is null)
+        {
+            return NotFound();
+        }
         return Ok(result);
     }
 }
