@@ -4,6 +4,7 @@
     <Project Path="src/TaskManager.Application/TaskManager.Application.csproj" />
     <Project Path="src/TaskManager.Domain/TaskManager.Domain.csproj" />
     <Project Path="src/TaskManager.Infrastructure/TaskManager.Infrastructure.csproj" />
+    <Project Path="src/TaskManager.Presentation/TaskManager.Presentation.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TaskManager.Tests/TaskManager.Tests.csproj" />
