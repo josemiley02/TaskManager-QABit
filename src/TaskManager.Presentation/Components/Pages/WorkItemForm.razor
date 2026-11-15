@@ -1,0 +1,169 @@
+@page "/work-item/new"
+@page "/work-item/{Id:guid}/edit"
+
+@using TaskManager.Presentation.Models.WorkItems
+@using TaskManager.Presentation.Services
+
+@inject WorkItemsApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsEditing ? "Editar tarea" : "Nueva tarea")</PageTitle>
+
+<a class="back-link" href="@(IsEditing ? $"/work-item/{Id}" : "/work-items")">← Volver</a>
+<section class="form-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">GESTIÓN DE TAREAS</p>
+            <h1>@(IsEditing ? "Editar tarea" : "Crear tarea")</h1>
+            <p class="page-description">
+                @(IsEditing ? "Actualiza la información de esta tarea." : "Completa los datos para agregar una tarea.")
+            </p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="empty-state"><span class="loading-indicator"></span><p>Cargando tarea...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+    else if (workItem is not null)
+    {
+        <EditForm Model="workItem" OnValidSubmit="SaveAsync" class="form-card">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="validation-summary" />
+
+            <div class="form-field">
+                <label for="title">Título</label>
+                <InputText id="title" class="form-control" @bind-Value="workItem.Title" />
+                <ValidationMessage For="@(() => workItem.Title)" />
+            </div>
+
+            <div class="form-field">
+                <label for="description">Descripción</label>
+                <InputTextArea id="description" class="form-control" rows="4" @bind-Value="workItem.Description" />
+                <ValidationMessage For="@(() => workItem.Description)" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="assignee">Responsable</label>
+                    <InputText id="assignee" class="form-control" @bind-Value="workItem.Asignee" />
+                    <ValidationMessage For="@(() => workItem.Asignee)" />
+                </div>
+                <div class="form-field">
+                    <label for="due-date">Fecha límite</label>
+                    <InputDate id="due-date" class="form-control" @bind-Value="workItem.DueDate" />
+                    <ValidationMessage For="@(() => workItem.DueDate)" />
+                </div>
+            </div>
+
+            @if (IsEditing)
+            {
+                <div class="form-field">
+                    <label for="status">Estado</label>
+                    <InputSelect id="status" class="form-select" @bind-Value="workItem.WorkItemStatus">
+                        <option value="Pending">Pendiente</option>
+                        <option value="InProcess">En progreso</option>
+                        <option value="Done">Completada</option>
+                    </InputSelect>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(saveError))
+            {
+                <div class="alert alert-danger" role="alert">@saveError</div>
+            }
+
+            <div class="form-actions">
+                <a class="button button-secondary" href="@(IsEditing ? $"/work-item/{Id}" : "/work-items")">Cancelar</a>
+                <button class="button button-primary" type="submit" disabled="@isSaving">
+                    @(isSaving ? "Guardando..." : "Guardar tarea")
+                </button>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private WorkItemRequest? workItem;
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+    private string? saveError;
+
+    private bool IsEditing => Id.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        saveError = null;
+        workItem = new WorkItemRequest();
+
+        if (!IsEditing)
+        {
+            isLoading = false;
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var response = await ApiClient.GetWorkItemAsync(Id!.Value);
+            workItem = new WorkItemRequest
+            {
+                Title = response.Title,
+                Description = response.Description,
+                WorkItemStatus = response.Status,
+                Asignee = response.Asignee,
+                DueDate = response.DueDate
+            };
+        }
+        catch (HttpRequestException exception)
+        {
+            errorMessage = exception.Message;
+            workItem = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (workItem is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        saveError = null;
+        try
+        {
+            if (IsEditing)
+            {
+                await ApiClient.UpdateWorkItemAsync(Id!.Value, workItem);
+                Navigation.NavigateTo($"/work-item/{Id}");
+            }
+            else
+            {
+                var created = await ApiClient.CreateWorkItemAsync(workItem);
+                Navigation.NavigateTo($"/work-item/{created.Id}");
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            saveError = exception.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

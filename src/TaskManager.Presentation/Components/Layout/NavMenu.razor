@@ -1,30 +1,17 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TaskManager.Presentation</a>
-    </div>
+﻿<div class="sidebar-brand">
+    <a href="/work-items" aria-label="TaskFlow, ir a tareas">
+        <span class="brand-mark">T</span>
+        <span>TaskFlow</span>
+    </a>
 </div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable">
     <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <span class="nav-section-label">ESPACIO DE TRABAJO</span>
+        <NavLink class="nav-link" href="work-items">
+            <span class="nav-icon" aria-hidden="true">▦</span> Todas las tareas
+        </NavLink>
+        <NavLink class="nav-link" href="work-item/new">
+            <span class="nav-icon" aria-hidden="true">＋</span> Nueva tarea
+        </NavLink>
     </nav>
 </div>
-

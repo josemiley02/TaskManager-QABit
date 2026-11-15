@@ -1,0 +1,130 @@
+@page "/work-item/{Id:guid}"
+
+@using TaskManager.Presentation.Models.WorkItems
+@using TaskManager.Presentation.Services
+
+@inject WorkItemsApiClient ApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Detalle de tarea</PageTitle>
+
+<a class="back-link" href="/work-items">← Volver a tareas</a>
+
+@if (isLoading)
+{
+    <div class="empty-state"><span class="loading-indicator"></span><p>Cargando tarea...</p></div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+    <a class="button button-secondary" href="/work-items">Volver a tareas</a>
+}
+else if (workItem is not null)
+{
+    <section class="detail-card">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">DETALLE DE TAREA</p>
+                <h1>@workItem.Title</h1>
+            </div>
+            <span class="status-badge @GetStatusClass(workItem.Status)">@GetStatusLabel(workItem.Status)</span>
+        </div>
+
+        <p class="detail-description">
+            @(string.IsNullOrWhiteSpace(workItem.Description) ? "Sin descripción." : workItem.Description)
+        </p>
+
+        <dl class="detail-grid">
+            <div><dt>Responsable</dt><dd>@workItem.Asignee</dd></div>
+            <div><dt>Fecha límite</dt><dd>@workItem.DueDate.ToString("dd/MM/yyyy")</dd></div>
+            <div><dt>Creada</dt><dd>@workItem.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd></div>
+            <div>
+                <dt>Última actualización</dt>
+                <dd>@(workItem.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Sin modificaciones")</dd>
+            </div>
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(actionError))
+        {
+            <div class="alert alert-danger" role="alert">@actionError</div>
+        }
+
+        <div class="form-actions">
+            <a class="button button-secondary" href="/work-item/@Id/edit">Editar tarea</a>
+            <button class="button button-danger" @onclick="DeleteAsync" disabled="@isDeleting">
+                @(isDeleting ? "Eliminando..." : "Eliminar tarea")
+            </button>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private WorkItemResponse? workItem;
+    private bool isLoading = true;
+    private bool isDeleting;
+    private string? errorMessage;
+    private string? actionError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            workItem = await ApiClient.GetWorkItemAsync(Id);
+        }
+        catch (HttpRequestException exception)
+        {
+            errorMessage = exception.Message;
+            workItem = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar la tarea «{workItem?.Title}»?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        isDeleting = true;
+        actionError = null;
+        try
+        {
+            await ApiClient.DeleteWorkItemAsync(Id);
+            Navigation.NavigateTo("/work-items");
+        }
+        catch (HttpRequestException exception)
+        {
+            actionError = exception.Message;
+            isDeleting = false;
+        }
+    }
+
+    private static string GetStatusLabel(string status) => status switch
+    {
+        "Pending" => "Pendiente",
+        "InProcess" => "En progreso",
+        "Done" => "Completada",
+        _ => status
+    };
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "status-pending",
+        "InProcess" => "status-in-progress",
+        "Done" => "status-done",
+        _ => "status-pending"
+    };
+}

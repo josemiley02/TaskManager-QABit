@@ -1,0 +1,220 @@
+@page "/work-items"
+
+@using TaskManager.Presentation.Models.WorkItems
+@using TaskManager.Presentation.Services
+
+@inject WorkItemsApiClient ApiClient
+@inject IJSRuntime JS
+
+<PageTitle>Tareas</PageTitle>
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">ORGANIZA TU TRABAJO</p>
+        <h1>Tareas</h1>
+        <p class="page-description">Consulta y administra tus tareas desde un solo lugar.</p>
+    </div>
+    <a class="button button-primary" href="/work-item/new">
+        <span aria-hidden="true">+</span> Nueva tarea
+    </a>
+</section>
+
+<section class="filter-panel" aria-label="Filtros de tareas">
+    <label class="filter-field">
+        <span>Buscar responsable</span>
+        <input class="form-control" @bind="assigneeFilter" @bind:event="oninput"
+               placeholder="Nombre del responsable" />
+    </label>
+    <label class="filter-field">
+        <span>Estado</span>
+        <select class="form-select" @bind="statusFilter">
+            <option value="">Todos los estados</option>
+            <option value="Pending">Pendiente</option>
+            <option value="InProcess">En progreso</option>
+            <option value="Done">Completada</option>
+        </select>
+    </label>
+    <div class="filter-actions">
+        <button class="button button-primary" @onclick="ApplyFiltersAsync">Filtrar</button>
+        <button class="button button-secondary" @onclick="ClearFiltersAsync">Limpiar</button>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <div class="empty-state"><span class="loading-indicator"></span><p>Cargando tareas...</p></div>
+}
+else if (workItems.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">✓</div>
+        <h2>No hay tareas para mostrar</h2>
+        <p>Crea una nueva tarea o cambia los filtros de búsqueda.</p>
+        <a class="button button-primary" href="/work-item/new">Crear tarea</a>
+    </div>
+}
+else
+{
+    <div class="list-summary">
+        <span>@totalCount @(totalCount == 1 ? "tarea" : "tareas")</span>
+        <span>Página @currentPage de @Math.Max(totalPages, 1)</span>
+    </div>
+
+    <div class="work-item-grid">
+        @foreach (var item in workItems)
+        {
+            <article class="work-item-card">
+                <div class="card-heading">
+                    <a class="work-item-title" href="@($"/work-item/{item.Id}")">@item.Title</a>
+                    <span class="status-badge @GetStatusClass(item.Status)">@GetStatusLabel(item.Status)</span>
+                </div>
+                <p class="work-item-description">
+                    @(string.IsNullOrWhiteSpace(item.Description) ? "Sin descripción." : item.Description)
+                </p>
+                <div class="work-item-meta">
+                    <span><span class="meta-label">Responsable</span>@item.Asignee</span>
+                    <span><span class="meta-label">Fecha límite</span>@item.DueDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="card-actions">
+                    <a class="button button-secondary button-small" href="@($"/work-item/{item.Id}")">Ver detalles</a>
+                    <a class="button button-secondary button-small" href="@($"/work-item/{item.Id}/edit")">Editar</a>
+                    <button class="button button-danger button-small"
+                            disabled="@(deletingId == item.Id)"
+                            @onclick="() => DeleteAsync(item)">
+                        @(deletingId == item.Id ? "Eliminando..." : "Eliminar")
+                    </button>
+                </div>
+            </article>
+        }
+    </div>
+
+    <nav class="pagination-controls" aria-label="Paginación">
+        <button class="button button-secondary" disabled="@(currentPage <= 1 || isLoading)"
+                @onclick="PreviousPageAsync">Anterior</button>
+        <span>Página @currentPage de @Math.Max(totalPages, 1)</span>
+        <button class="button button-secondary" disabled="@(currentPage >= totalPages || isLoading)"
+                @onclick="NextPageAsync">Siguiente</button>
+    </nav>
+}
+
+@code {
+    private List<WorkItemResponseList> workItems = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? statusFilter;
+    private string assigneeFilter = string.Empty;
+    private int currentPage = 1;
+    private const int PageSize = 10;
+    private int totalPages;
+    private int totalCount;
+    private Guid? deletingId;
+
+    protected override Task OnInitializedAsync() => LoadWorkItemsAsync();
+
+    private async Task LoadWorkItemsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await ApiClient.GetWorkItemsAsync(
+                currentPage,
+                PageSize,
+                statusFilter,
+                assigneeFilter);
+
+            workItems = result.Items.ToList();
+            totalPages = result.TotalPages;
+            totalCount = result.TotalCount;
+        }
+        catch (HttpRequestException exception)
+        {
+            errorMessage = exception.Message;
+            workItems = [];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        currentPage = 1;
+        await LoadWorkItemsAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        statusFilter = null;
+        assigneeFilter = string.Empty;
+        currentPage = 1;
+        await LoadWorkItemsAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        currentPage--;
+        await LoadWorkItemsAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        currentPage++;
+        await LoadWorkItemsAsync();
+    }
+
+    private async Task DeleteAsync(WorkItemResponseList item)
+    {
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar la tarea «{item.Title}»?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        deletingId = item.Id;
+        errorMessage = null;
+
+        try
+        {
+            await ApiClient.DeleteWorkItemAsync(item.Id);
+            if (workItems.Count == 1 && currentPage > 1)
+            {
+                currentPage--;
+            }
+            await LoadWorkItemsAsync();
+        }
+        catch (HttpRequestException exception)
+        {
+            errorMessage = exception.Message;
+        }
+        finally
+        {
+            deletingId = null;
+        }
+    }
+
+    private static string GetStatusLabel(string status) => status switch
+    {
+        "Pending" => "Pendiente",
+        "InProcess" => "En progreso",
+        "Done" => "Completada",
+        _ => status
+    };
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "status-pending",
+        "InProcess" => "status-in-progress",
+        "Done" => "status-done",
+        _ => "status-pending"
+    };
+}
