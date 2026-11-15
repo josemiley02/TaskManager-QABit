@@ -11,22 +11,25 @@ namespace TaskManager.Api.Controllers;
 public class WorkItemsController : ControllerBase
 {
     private readonly CreateWorkItemService _createWorkItemService;
-    private readonly IValidator<CreateWorkItemRequest> _createWorkItemValidator;
+    private readonly UpdateWorkItemService _updateWorkItemService;
+    private readonly IValidator<WorkItemRequest> _workItemRequestValidator;
     private readonly GetWorkItemsService _getWorkItemsService;
     private readonly IValidator<GetWorkItemsRequest> _getWorkItemsValidator;
     private readonly GetWorkItemByIdService _getWorkItemByIdService;
     private readonly DeleteWorkItemService _deleteWorkItemService;
 
     public WorkItemsController(CreateWorkItemService createWorkItemService, 
-        IValidator<CreateWorkItemRequest> createWorkItemValidator, 
+        UpdateWorkItemService updateWorkItemService,
+        IValidator<WorkItemRequest> createWorkItemValidator, 
         GetWorkItemsService getWorkItemsService, 
         IValidator<GetWorkItemsRequest> getWorkItemsValidator, 
         GetWorkItemByIdService getWorkItemByIdService,
         DeleteWorkItemService deleteWorkItemService)
     {
-        //POST
+        //POST and PUT
         _createWorkItemService = createWorkItemService;
-        _createWorkItemValidator = createWorkItemValidator;
+        _updateWorkItemService = updateWorkItemService;
+        _workItemRequestValidator = createWorkItemValidator;
 
         //GET
         _getWorkItemsService = getWorkItemsService;
@@ -42,9 +45,9 @@ public class WorkItemsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(WorkItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateWorkItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Create([FromBody] WorkItemRequest request, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _createWorkItemValidator.ValidateAsync(request, cancellationToken);
+        var validationResult = await _workItemRequestValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors
@@ -59,6 +62,32 @@ public class WorkItemsController : ControllerBase
         var createdWorkItem = await _createWorkItemService.CreateAsync(request, cancellationToken);
         return Created($"/api/tasks/{createdWorkItem.Id}", createdWorkItem);
     }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(WorkItemResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update([FromBody] WorkItemRequest request, [FromRoute] Guid id, CancellationToken cancellationToken = default)
+    {
+        var validationResult = await _workItemRequestValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(error => error.ErrorMessage).ToArray()
+                );
+            return ValidationProblem(new ValidationProblemDetails(errors));
+        }
+        var updatedWorkItem = await _updateWorkItemService.UpdateAsync(id, request, cancellationToken);
+        if (updatedWorkItem is null)
+        {
+            return NotFound();
+        }
+        return Ok(updatedWorkItem);
+    }
+
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<WorkItemResponseList>), StatusCodes.Status200OK)]

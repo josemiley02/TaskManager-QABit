@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<GetWorkItemsService>();
         services.AddScoped<GetWorkItemByIdService>();
         services.AddScoped<DeleteWorkItemService>();
+        services.AddScoped<UpdateWorkItemService>();
         return services;
     }
 }

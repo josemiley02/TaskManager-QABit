@@ -3,9 +3,9 @@ using TaskManager.Application.DTOs.WorkItems;
 
 namespace TaskManager.Application.Validators.Tasks;
 
-public class CreateWorkItemValidator : AbstractValidator<CreateWorkItemRequest>
+public class WorkItemValidator : AbstractValidator<WorkItemRequest>
 {
-    public CreateWorkItemValidator()
+    public WorkItemValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty()

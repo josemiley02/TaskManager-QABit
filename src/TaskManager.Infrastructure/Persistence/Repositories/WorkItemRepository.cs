@@ -18,6 +18,11 @@ public class WorkItemRepository : IWorkItemRepository
         await _dbContext.AddAsync(work, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+    public async Task UpdateAsync(WorkItem work, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Update(work);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
     public async Task<(IReadOnlyList<WorkItem> items, int totalCount)> GetPagedAsync(WorkItemStatus? status, string asignee, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.WorkItems.AsNoTracking();

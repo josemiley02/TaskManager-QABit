@@ -13,7 +13,7 @@ public class CreateWorkItemService
         _workItemRepository = workItemRepository;
     }
 
-    public async Task<WorkItemResponse> CreateAsync(CreateWorkItemRequest request, CancellationToken cancellationToken= default)
+    public async Task<WorkItemResponse> CreateAsync(WorkItemRequest request, CancellationToken cancellationToken= default)
     {
         var workItem = new WorkItem
         {
