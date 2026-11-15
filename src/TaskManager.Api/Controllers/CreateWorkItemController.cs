@@ -1,4 +1,6 @@
+using System.Globalization;
 using FluentValidation;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Application.DTOs.Common;
 using TaskManager.Application.DTOs.WorkItems;
@@ -15,8 +17,14 @@ public class WorkItemsController : ControllerBase
     private readonly GetWorkItemsService _getWorkItemsService;
     private readonly IValidator<GetWorkItemsRequest> _getWorkItemsValidator;
     private readonly GetWorkItemByIdService _getWorkItemByIdService;
+    private readonly DeleteWorkItemService _deleteWorkItemService;
 
-    public WorkItemsController(CreateWorkItemService createWorkItemService, IValidator<CreateWorkItemRequest> createWorkItemValidator, GetWorkItemsService getWorkItemsService, IValidator<GetWorkItemsRequest> getWorkItemsValidator, GetWorkItemByIdService getWorkItemByIdService)
+    public WorkItemsController(CreateWorkItemService createWorkItemService, 
+        IValidator<CreateWorkItemRequest> createWorkItemValidator, 
+        GetWorkItemsService getWorkItemsService, 
+        IValidator<GetWorkItemsRequest> getWorkItemsValidator, 
+        GetWorkItemByIdService getWorkItemByIdService,
+        DeleteWorkItemService deleteWorkItemService)
     {
         //POST
         _createWorkItemService = createWorkItemService;
@@ -28,6 +36,9 @@ public class WorkItemsController : ControllerBase
 
         //GET BY ID
         _getWorkItemByIdService = getWorkItemByIdService;
+
+        //DELETE
+        _deleteWorkItemService = deleteWorkItemService;
     }
 
     [HttpPost]
@@ -82,5 +93,18 @@ public class WorkItemsController : ControllerBase
             return NotFound();
         }
         return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(NoContent), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteWorkItem([FromRoute] Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await _deleteWorkItemService.DeleteWorkItemAsync(id, cancellationToken);
+        if (!result)
+        {
+            return NotFound();
+        }
+        return NoContent();
     }
 }

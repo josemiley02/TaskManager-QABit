@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<CreateWorkItemService>();
         services.AddScoped<GetWorkItemsService>();
         services.AddScoped<GetWorkItemByIdService>();
+        services.AddScoped<DeleteWorkItemService>();
         return services;
     }
 }

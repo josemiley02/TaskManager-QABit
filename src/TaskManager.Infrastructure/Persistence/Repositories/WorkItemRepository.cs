@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskManager.Application.DTOs.Common;
 using TaskManager.Application.Interfaces;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Enums;
@@ -17,7 +18,6 @@ public class WorkItemRepository : IWorkItemRepository
         await _dbContext.AddAsync(work, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
-
     public async Task<(IReadOnlyList<WorkItem> items, int totalCount)> GetPagedAsync(WorkItemStatus? status, string asignee, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.WorkItems.AsNoTracking();
@@ -46,5 +46,15 @@ public class WorkItemRepository : IWorkItemRepository
     public async Task<WorkItem?> GetWorkItemByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id==id, cancellationToken);
+    }
+    public async Task<bool> DeleteWorkItemAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var item = await _dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id==id, cancellationToken);
+        if (item is null)
+            return false;
+        
+        _dbContext.WorkItems.Remove(item);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }
