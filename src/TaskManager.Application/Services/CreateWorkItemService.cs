@@ -17,7 +17,7 @@ public class CreateWorkItemService
     {
         var workItem = new WorkItem
         {
-            Id = new Guid(),
+            Id = Guid.NewGuid(),
             Title = request.Title.Trim(),
             Description = request.Description,
             WorkItemStatus = WorkItemStatus.Pending,
